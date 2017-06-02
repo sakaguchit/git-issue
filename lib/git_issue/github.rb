@@ -10,11 +10,12 @@ class GitIssue::Github < GitIssue::Base
     @repo = configured_value('issue.repo')
     if @repo.blank?
       url = `git config remote.origin.url`.strip
-      @repo = url.match(/github.com[:\/](.+)\.git/)[1]
+      @host = configured_value('issue.url).present? ? URI.parse(configured_value('issue.url')).host : "github.com"
+      @repo = url.match(/#{@host}[:\/](.+)\.git/)[1]
     end
 
     @user = options[:user] || configured_value('issue.user')
-    @user = global_configured_value('github.user') if @user.blank?
+    @user = global_configured_value('/github.user') if @user.blank?
     @user = Pit.get("github", :require => {
         "user" => "Your user name in GitHub",
     })["user"] if @user.blank?
@@ -58,7 +59,7 @@ class GitIssue::Github < GitIssue::Base
   def view(options = {})
     ticket = options[:ticket_id]
     raise 'ticket_id is required.' unless ticket
-    url = URI.join('https://github.com/', [@user, @repo, 'issues', ticket].join("/"))
+    url = URI.join("https://#{@host}/", [@user, @repo, 'issues', ticket].join("/"))
     system "git web--browse #{url}"
   end
 
@@ -198,9 +199,9 @@ class GitIssue::Github < GitIssue::Base
 
   private
 
-  ROOT = 'https://api.github.com/'
   def to_url(*path_list)
-    URI.join(ROOT, path_list.join("/"))
+    api_root = @host.present? ? "https://#{@host}/api/v3/" : 'https://api.github.com/'
+    URI.join(api_root, path_list.join("/"))
   end
 
   def fetch_json(url, options = {}, params = {})
