@@ -10,7 +10,7 @@ class GitIssue::Github < GitIssue::Base
     @repo = configured_value('issue.repo')
     if @repo.blank?
       url = `git config remote.origin.url`.strip
-      @host = configured_value('issue.url).present? ? URI.parse(configured_value('issue.url')).host : "github.com"
+      @host = configured_value('issue.url').present? ? URI.parse(configured_value('issue.url')).host : "github.com"
       @repo = url.match(/#{@host}[:\/](.+)\.git/)[1]
     end
 
